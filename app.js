@@ -1,6 +1,6 @@
 /***** 1. Initialize Firebase *****/
 const firebaseConfig = {
-  apiKey: "MYKEY",
+  apiKey: "AIzaSyDejHtCx3Lg4NfPjuT8fcrgG_3mif30jsI",
   authDomain: "volunteeringapp-9a1ea.firebaseapp.com",
   projectId: "volunteeringapp-9a1ea",
   storageBucket: "volunteeringapp-9a1ea.firebasestorage.app",
@@ -39,7 +39,10 @@ const exampleEvents = [
     organizerEmail: "johndoe@example.com",
     organizerPhone: "555-1234",
     flyerURL: "",
-    userId: "organizerUID1" // Replace with actual organizer UID
+    userId: "organizerUID1", // Replace with actual organizer UID
+    createdAt: firebase.database.ServerValue.TIMESTAMP, // Added for sorting
+    latitude: 37.7749, // Example coordinates (San Francisco)
+    longitude: -122.4194
   },
   {
     name: "Soup Kitchen Assistance",
@@ -54,7 +57,10 @@ const exampleEvents = [
     organizerEmail: "janesmith@example.com",
     organizerPhone: "555-5678",
     flyerURL: "",
-    userId: "organizerUID2" // Replace with actual organizer UID
+    userId: "organizerUID2", // Replace with actual organizer UID
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    latitude: 34.0522, // Example coordinates (Los Angeles)
+    longitude: -118.2437
   },
   {
     name: "Park Tree Planting",
@@ -69,7 +75,10 @@ const exampleEvents = [
     organizerEmail: "emilyj@example.com",
     organizerPhone: "555-9012",
     flyerURL: "",
-    userId: "organizerUID3" // Replace with actual organizer UID
+    userId: "organizerUID3", // Replace with actual organizer UID
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    latitude: 40.785091, // Example coordinates (New York City)
+    longitude: -73.968285
   },
   {
     name: "Senior Center Tutoring",
@@ -84,7 +93,10 @@ const exampleEvents = [
     organizerEmail: "michaelb@example.com",
     organizerPhone: "555-3456",
     flyerURL: "",
-    userId: "organizerUID4" // Replace with actual organizer UID
+    userId: "organizerUID4", // Replace with actual organizer UID
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    latitude: 41.8781, // Example coordinates (Chicago)
+    longitude: -87.6298
   },
   {
     name: "Animal Shelter Volunteer",
@@ -99,7 +111,10 @@ const exampleEvents = [
     organizerEmail: "sarahd@example.com",
     organizerPhone: "555-7890",
     flyerURL: "",
-    userId: "organizerUID5" // Replace with actual organizer UID
+    userId: "organizerUID5", // Replace with actual organizer UID
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    latitude: 29.7604, // Example coordinates (Houston)
+    longitude: -95.3698
   }
 ];
 
@@ -132,6 +147,7 @@ function populateExampleEvents() {
  * 4. LOAD & RENDER Volunteer Opportunities from DB
  *****/
 let allEvents = [];
+let userLocation = null; // To store user's current location
 
 function loadVolunteerOpportunities() {
   allEvents = [];
@@ -144,6 +160,10 @@ function loadVolunteerOpportunities() {
       snapshot.forEach((childSnap) => {
         const data = childSnap.val();
         data._key = childSnap.key;
+        // Ensure createdAt is present
+        if (!data.createdAt) {
+          data.createdAt = 0; // Default value if missing
+        }
         allEvents.push(data);
       });
     }
@@ -166,12 +186,25 @@ function renderVolunteerOpportunities() {
   const locationFilter = document.getElementById('volLocationFilter').value.toLowerCase();
   const dateFilter = document.getElementById('volDateFilter').value; // "yyyy-mm-dd"
   const timeFilter = document.getElementById('volTimeFilter').value.toLowerCase();
+  const sortFilter = document.getElementById('volSortFilter').value; // "default", "newest", "upcoming", "proximity"
 
   // Get current user ID
   const user = auth.currentUser;
   const userId = user ? user.uid : null;
 
-  const filtered = allEvents.filter((op) => {
+  // Get today's date in "yyyy-mm-dd" format
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  let mm = today.getMonth() + 1; // Months start at 0!
+  let dd = today.getDate();
+
+  if (dd < 10) dd = '0' + dd;
+  if (mm < 10) mm = '0' + mm;
+
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
+  // Apply filters
+  let filtered = allEvents.filter((op) => {
     const name = (op.name || "").toLowerCase();
     const org = (op.organization || "").toLowerCase();
     const loc = (op.location || "").toLowerCase();
@@ -201,6 +234,47 @@ function renderVolunteerOpportunities() {
     return textMatch && typeMatch && locMatch && dateMatch && tMatch;
   });
 
+  // Apply upcoming filter if selected
+  if (sortFilter === "upcoming") {
+    filtered = filtered.filter(event => event.date >= todayStr);
+  }
+
+  // Sort by newest if selected
+  if (sortFilter === "newest") {
+    filtered.sort((a, b) => {
+      return b.createdAt - a.createdAt;
+    });
+  }
+
+  // Sort by proximity if selected
+  if (sortFilter === "proximity") {
+    if (userLocation) {
+      filtered = filtered.map(event => {
+        event.distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          event.latitude,
+          event.longitude
+        );
+        return event;
+      });
+      filtered.sort((a, b) => {
+        return a.distance - b.distance;
+      });
+    } else {
+      // If user's location is not available, prompt for it
+      getUserLocation().then(location => {
+        if (location) {
+          userLocation = location;
+          applyVolFilter(); // Re-apply filters now that location is available
+        } else {
+          alert("Location access denied. Cannot sort by proximity.");
+        }
+      });
+      return; // Exit current render call; it will re-render after location is obtained
+    }
+  }
+
   if (filtered.length === 0) {
     container.innerHTML = "<p>No volunteer opportunities found.</p>";
     return;
@@ -228,6 +302,12 @@ function renderVolunteerOpportunities() {
       joinButtonHTML = `<button class="join-event-btn disabled" disabled>Full</button>`;
     }
 
+    // If proximity sorting is active and distance is calculated, display it
+    let distanceHTML = '';
+    if (sortFilter === "proximity" && ev.distance !== undefined) {
+      distanceHTML = `<p>Distance: ${ev.distance.toFixed(2)} km</p>`;
+    }
+
     box.innerHTML = `
       <h3>${ev.name || "Untitled Event"}</h3>
       <p>Organization: ${ev.organization || "N/A"}</p>
@@ -235,6 +315,7 @@ function renderVolunteerOpportunities() {
       <p>Date: ${ev.date || "N/A"}</p>
       <p>Time: ${ev.time || "N/A"}</p>
       <p>Spots Left: ${ev.spots || 0}</p>
+      ${distanceHTML}
       ${joinButtonHTML}
       <button class="view-details-btn" onclick="openEventDetails('${ev._key}')">View Details</button>
     `;
@@ -277,6 +358,8 @@ function postNewEvent() {
   const organizerEmailField = document.getElementById('orgEventOrganizerEmail');
   const organizerPhoneField = document.getElementById('orgEventOrganizerPhone');
   const flyerField = document.getElementById('orgEventFlyer');
+  const latitudeField = document.getElementById('orgEventLatitude');
+  const longitudeField = document.getElementById('orgEventLongitude');
 
   // Gather values
   const eventObj = {
@@ -293,11 +376,14 @@ function postNewEvent() {
     organizerPhone: organizerPhoneField.value.trim(),
     flyerURL: "", // Will be updated after flyer upload
     userId: user.uid, // Associate event with user
-    createdAt: firebase.database.ServerValue.TIMESTAMP // Optional: Timestamp
+    createdAt: firebase.database.ServerValue.TIMESTAMP, // Timestamp for sorting
+    latitude: parseFloat(latitudeField.value), // Convert to float
+    longitude: parseFloat(longitudeField.value)
   };
 
-  if (!eventObj.name || !eventObj.date || !eventObj.time || !eventObj.location) {
-    alert("Please fill in at least the Event Name, Date, Time, and Location!");
+  // Basic validation
+  if (!eventObj.name || !eventObj.date || !eventObj.time || !eventObj.location || isNaN(eventObj.latitude) || isNaN(eventObj.longitude)) {
+    alert("Please fill in at least the Event Name, Date, Time, Location, Latitude, and Longitude!");
     return;
   }
 
@@ -338,6 +424,8 @@ function postNewEvent() {
               organizerEmailField.value = "";
               organizerPhoneField.value = "";
               flyerField.value = "";
+              latitudeField.value = "";
+              longitudeField.value = "";
 
               // Optionally, add the new event to "My Plans" if it's open
               loadMyPlans(); // Reload My Plans to include the new event
@@ -369,6 +457,8 @@ function postNewEvent() {
         organizerEmailField.value = "";
         organizerPhoneField.value = "";
         flyerField.value = "";
+        latitudeField.value = "";
+        longitudeField.value = "";
 
         // Optionally, add the new event to "My Plans" if it's open
         loadMyPlans(); // Reload My Plans to include the new event
@@ -599,6 +689,9 @@ if (signInBtn) {
           localStorage.removeItem('redirectAfterLogin');
           showOrganize();
           alert("You can now proceed to create your event.");
+        } else if (redirectAfterLogin === 'joinEvent') {
+          localStorage.removeItem('redirectAfterLogin');
+          // Implement logic to open join event modal if applicable
         } else {
           showProfile();
         }
@@ -1286,6 +1379,8 @@ function populateEditEventModal(event) {
   document.getElementById('editEventOrganizerName').value = event.organizerName || "";
   document.getElementById('editEventOrganizerEmail').value = event.organizerEmail || "";
   document.getElementById('editEventOrganizerPhone').value = event.organizerPhone || "";
+  document.getElementById('editEventLatitude').value = event.latitude || "";
+  document.getElementById('editEventLongitude').value = event.longitude || "";
 
   // Set the event key as a data attribute on the form
   const editEventForm = document.getElementById('editEventForm');
@@ -1314,7 +1409,7 @@ function saveEditedEvent(eventKey) {
 
   const eventRef = database.ref(`events/${eventKey}`);
 
-  // Fetch current event data to verify ownership
+  // Fetch event data to verify ownership
   eventRef.once('value').then((snapshot) => {
     if (!snapshot.exists()) {
       throw "Event does not exist.";
@@ -1337,10 +1432,13 @@ function saveEditedEvent(eventKey) {
     const organizerName = document.getElementById('editEventOrganizerName').value.trim();
     const organizerEmail = document.getElementById('editEventOrganizerEmail').value.trim();
     const organizerPhone = document.getElementById('editEventOrganizerPhone').value.trim();
+    const latitude = parseFloat(document.getElementById('editEventLatitude').value);
+    const longitude = parseFloat(document.getElementById('editEventLongitude').value);
     const flyerField = document.getElementById('editEventFlyer');
 
-    if (!name || !date || !time || !loc) {
-      alert("Please fill in at least the Event Name, Date, Time, and Location!");
+    // Basic validation
+    if (!name || !date || !time || !loc || isNaN(latitude) || isNaN(longitude)) {
+      alert("Please fill in at least the Event Name, Date, Time, Location, Latitude, and Longitude!");
       return;
     }
 
@@ -1357,7 +1455,9 @@ function saveEditedEvent(eventKey) {
         spots,
         organizerName,
         organizerEmail,
-        organizerPhone
+        organizerPhone,
+        latitude,
+        longitude
       };
       if (flyerURL) {
         updatedEvent.flyerURL = flyerURL;
@@ -1496,3 +1596,48 @@ document.addEventListener('keydown', function(event) {
   }
 });
 
+/*****
+ * 21. Geolocation Functions
+ *****/
+
+// Function to get user's current location
+function getUserLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      resolve(null);
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Error obtaining location:", error);
+          resolve(null);
+        }
+      );
+    }
+  });
+}
+
+// Function to calculate distance between two coordinates using Haversine formula
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  function toRad(x) {
+    return x * Math.PI / 180;
+  }
+
+  const R = 6371; // Radius of Earth in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+    ; 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const d = R * c;
+  return d; // Distance in km
+}
