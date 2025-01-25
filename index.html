@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Volunteen</title>
+
+  <!-- Boxicons -->
+  <link
+    href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    rel="stylesheet"
+  />
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <div class="company-name">
+      <a href="#" onclick="showHome()" style="text-decoration:none; color:white;">
+        Volunteen
+      </a>
+    </div>
+
+    <ul class="nav-menu" id="navMenu">
+      <li>
+        <a href="#" class="btn nav-link" onclick="showHome()" id="homeLink">Home</a>
+      </li>
+      <li>
+        <a href="#" class="btn nav-link" onclick="showChat()">Chat</a>
+      </li>
+      <li>
+        <a href="#" class="btn nav-link" onclick="showImpact()">Impact Calculator</a>
+      </li>
+      <li>
+        <a href="#" class="btn nav-link" onclick="showVolunteer()">Volunteer</a>
+      </li>
+      <li>
+        <a href="#" class="btn nav-link" onclick="showOrganize()">Organize</a>
+      </li>
+      <!-- NEW "My Plans" TAB -->
+      <li id="myPlansNav" style="display:none;">
+        <a href="#" class="btn nav-link" onclick="showMyPlans()">My Plans</a>
+      </li>
+      <!-- PROFILE -->
+      <li id="profileNav" style="display:none;">
+        <a href="#" class="btn nav-link" onclick="showProfile()">
+          <i class="bx bx-user-circle" style="font-size: 20px;"></i>
+        </a>
+      </li>
+      <!-- LOGOUT -->
+      <li id="logoutNav" style="display:none;">
+        <a href="#" class="btn nav-link" onclick="logout()">
+          <i class="bx bx-door-open" style="font-size:20px;"></i>
+        </a>
+      </li>
+      <!-- SIGN IN -->
+      <li id="signInNav">
+        <a href="#" class="btn nav-link" onclick="login()">Sign In</a>
+      </li>
+      <!-- SIGN UP -->
+      <li id="signUpNav">
+        <a href="#" class="btn nav-link" onclick="register()">Sign Up</a>
+      </li>
+    </ul>
+
+    <div class="nav-menu-btn">
+      <i class="bx bx-menu" onclick="myMenuFunction()"></i>
+    </div>
+  </nav>
+
+  <!-- WRAPPER -->
+  <div class="wrapper">
+    <!-- HOME SECTION -->
+    <div id="homeSection" class="content-section">
+      <h1 class="home-heading">Inspire Change, Empower Others</h1>
+      <p class="home-subheading">
+        Join Volunteen and make a lasting impact on your community.
+      </p>
+      <h2 class="features-title">Our Features</h2>
+      <div class="features-container">
+        <div class="feature-box" onclick="showChat()" style="cursor:pointer;">
+          <h3><span style="font-size:2rem;">🤖</span> Chat Bot</h3>
+          <p>Get immediate help and answers from our AI-powered chatbot.</p>
+        </div>
+        <div class="feature-box" onclick="showImpact()" style="cursor:pointer;">
+          <h3><span style="font-size:2rem;">🔢</span> Community Impact Calculator</h3>
+          <p>Measure the difference you're making in your community.</p>
+        </div>
+        <div class="feature-box" onclick="showVolunteer()" style="cursor:pointer;">
+          <h3><span style="font-size:2rem;">🤝</span> Volunteer Portal</h3>
+          <p>Browse and sign up for volunteering opportunities in your area.</p>
+        </div>
+        <!-- NEW "Organize" FEATURE BOX -->
+        <div class="feature-box" onclick="showOrganize()" style="cursor:pointer;">
+          <h3><span style="font-size:2rem;">📢</span> Organize</h3>
+          <p>Create and manage your own volunteering events to engage your community.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT SECTION -->
+    <div id="chatSection" class="content-section hidden" style="color:#fff;">
+      <h1>Chat with our Bot</h1>
+      <div class="chat-container">
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-container">
+          <textarea
+            id="chatInput"
+            placeholder="Type your message here..."
+            onkeydown="checkEnter(event)"
+          ></textarea>
+          <button onclick="sendChatMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPACT CALCULATOR SECTION -->
+    <div id="impactSection" class="content-section hidden" style="color:#fff;">
+      <h1>Impact Calculator</h1>
+      <p>This is the Impact Calculator. (Placeholder text.)</p>
+    </div>
+
+    <!-- PROFILE SECTION -->
+    <div id="profileSection" class="content-section hidden" style="color:#fff;">
+      <h1>Your Profile</h1>
+      <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:30px;">
+        <div style="flex:0 0 200px; text-align:center;">
+          <img
+            id="profilePhoto"
+            src="images/default-profile.png"
+            alt="Profile Photo"
+            style="width:150px; height:150px; object-fit:cover; border-radius:50%; background:#ccc;"
+          />
+          <!-- Optional: Add file input for photo upload -->
+          <input type="file" id="profilePhotoInput" accept="image/*" style="margin-top:10px;"/>
+        </div>
+        <div style="flex:1;">
+          <p><strong>Email:</strong> <span id="profileEmail">N/A</span></p>
+          <p><strong>Name:</strong> <span id="profileName">N/A</span></p>
+
+          <div style="margin:15px 0;">
+            <label><strong>Description:</strong></label><br/>
+            <textarea id="profileDescription" rows="3" style="
+              width:100%;
+              border:none;
+              background: rgba(255,255,255,0.2);
+              margin-bottom:10px;
+              color:black;
+            "></textarea>
+
+            <label><strong>Organization:</strong></label><br/>
+            <input type="text" id="profileOrg" style="
+              width:100%;
+              border:none;
+              background: rgba(255,255,255,0.2);
+              margin-bottom:10px;
+              color:black;
+            " />
+          </div>
+
+          <button class="submit" style="margin-top:15px;" onclick="updateUserProfile()">
+            Save Profile
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VOLUNTEER SECTION (Browse Events) -->
+    <div id="volunteerSection" class="content-section hidden" style="color:#fff;">
+      <h1>Volunteer Opportunities</h1>
+      <p>Explore volunteer events below:</p>
+
+      <!-- Search + Filter Row -->
+      <div class="search-bar-container">
+        <input
+          type="text"
+          id="volunteerSearch"
+          class="search-bar"
+          placeholder="Search volunteering..."
+        />
+        <button class="search-btn" onclick="applyVolFilter()">Search</button>
+      </div>
+
+      <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:10px;">
+        <div>
+          <label><strong>Type:</strong></label><br/>
+          <select id="volTypeFilter" onchange="applyVolFilter()" style="
+            background:#fff; color:#000; padding:5px; border-radius:5px;
+          ">
+            <option value="All">All</option>
+            <option value="Environment">Environment</option>
+            <option value="Education">Education</option>
+            <option value="Health">Health</option>
+            <option value="Community">Community</option>
+            <option value="Animal Welfare">Animal Welfare</option>
+            <option value="Arts">Arts</option>
+            <option value="Sports">Sports</option>
+          </select>
+        </div>
+        <!-- Filter by location -->
+        <div>
+          <label><strong>Location:</strong></label><br/>
+          <input type="text" id="volLocationFilter" style="
+            background:#fff; color:#000; padding:5px; border-radius:5px;
+          " onkeyup="applyVolFilter()"/>
+        </div>
+        <!-- Filter by date -->
+        <div>
+          <label><strong>Date:</strong></label><br/>
+          <input type="date" id="volDateFilter" style="
+            background:#fff; color:#000; padding:5px; border-radius:5px;
+          " onchange="applyVolFilter()"/>
+        </div>
+        <!-- Filter by time -->
+        <div>
+          <label><strong>Time:</strong></label><br/>
+          <input type="text" id="volTimeFilter" placeholder="e.g. 9AM" style="
+            background:#fff; color:#000; padding:5px; border-radius:5px;
+          " onkeyup="applyVolFilter()"/>
+        </div>
+      </div>
+
+      <div
+        class="volunteer-list"
+        style="margin-top:30px; display:flex; flex-wrap:wrap; gap:20px;"
+        id="volunteerOpportunitiesContainer"
+      ></div>
+    </div>
+
+    <!-- ORGANIZE SECTION (Create New Event) -->
+    <div id="organizeSection" class="content-section hidden" style="color:#fff;">
+      <h1>Organize an Event</h1>
+      <p style="font-size:0.9rem;">Create a new volunteering event below</p>
+
+      <label>Event Name:</label>
+      <input type="text" id="orgEventName" class="org-input"/>
+
+      <label>Organization:</label>
+      <input type="text" id="orgEventOrg" class="org-input"/>
+
+      <label>Description:</label>
+      <textarea id="orgEventDesc" class="org-input" rows="3"></textarea>
+
+      <label>Location:</label>
+      <input type="text" id="orgEventLocation" class="org-input"/>
+
+      <label>Date:</label>
+      <input type="date" id="orgEventDate" class="org-input"/>
+
+      <label>Time:</label>
+      <input type="text" id="orgEventTime" class="org-input" placeholder="e.g. 9AM - 12PM"/>
+
+      <label>Type:</label>
+      <select id="orgEventType" class="org-input">
+        <option value="Environment">Environment</option>
+        <option value="Education">Education</option>
+        <option value="Health">Health</option>
+        <option value="Community">Community</option>
+        <option value="Animal Welfare">Animal Welfare</option>
+        <option value="Arts">Arts</option>
+        <option value="Sports">Sports</option>
+      </select>
+
+      <label>Spots Left:</label>
+      <input type="number" id="orgEventSpots" class="org-input" placeholder="e.g. 10"/>
+
+      <!-- NEW: Additional Fields -->
+      <label>Your Name:</label>
+      <input type="text" id="orgEventOrganizerName" class="org-input" placeholder="Organizer's Full Name"/>
+
+      <label>Your Email:</label>
+      <input type="email" id="orgEventOrganizerEmail" class="org-input" placeholder="Organizer's Email"/>
+
+      <label>Your Phone:</label>
+      <input type="tel" id="orgEventOrganizerPhone" class="org-input" placeholder="Organizer's Phone Number"/>
+
+      <label>Flyer (Optional):</label>
+      <input type="file" id="orgEventFlyer" class="org-input" accept="image/*"/>
+
+      <button class="submit" style="margin-top:15px;" onclick="postNewEvent()">
+        Post Event
+      </button>
+    </div>
+
+    <!-- MY PLANS SECTION -->
+    <div id="myPlansSection" class="content-section hidden" style="color:#fff;">
+      <h1>My Plans</h1>
+      <p>Here are the volunteering events you have organized and joined:</p>
+      
+      <!-- Organized Events -->
+      <div>
+        <h2>Organized Events</h2>
+        <div id="organizedEventsContainer" style="margin-top:20px; display:flex; flex-direction:column; gap:20px;">
+          <!-- User's Organized Events Will Be Dynamically Injected Here -->
+        </div>
+      </div>
+
+      <!-- Joined Events -->
+      <div style="margin-top:40px;">
+        <h2>Joined Events</h2>
+        <div id="joinedEventsContainer" style="margin-top:20px; display:flex; flex-direction:column; gap:20px;">
+          <!-- User's Joined Events Will Be Dynamically Injected Here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="form-box hidden" id="login">
+      <div class="login-container">
+        <div class="top">
+          <span style="color:#fff;">Don't have an account?
+            <a href="#" onclick="register()">Sign Up</a>
+          </span>
+          <header style="color:#fff;">Login</header>
+        </div>
+        <div class="input-box" style="margin-bottom:25px;">
+          <input
+            type="text"
+            class="input-field"
+            placeholder="Username or Email"
+            id="loginEmail"
+            required
+          />
+          <i class="bx bx-user"></i>
+        </div>
+        <div class="input-box" style="margin-bottom:25px;">
+          <input
+            type="password"
+            class="input-field"
+            placeholder="Password"
+            id="loginPassword"
+            required
+          />
+          <i class="bx bx-lock-alt"></i>
+          <span class="toggle-pw" onclick="togglePassword('loginPassword')" style="
+            position:absolute;
+            right:15px;
+            top:10px;
+            color:#fff;
+            cursor:pointer;
+          "><i class='bx bx-show'></i></span>
+        </div>
+        <div class="input-box" style="margin-bottom:25px;">
+          <button type="submit" class="submit" id="signInBtn">Sign In</button>
+        </div>
+        <div class="two-col" style="color:#fff;">
+          <div class="one">
+            <input type="checkbox" id="login-check" />
+            <label for="login-check">Remember Me</label>
+          </div>
+          <div class="two">
+            <!-- Forgot password link triggers a reset flow -->
+            <label>
+              <a href="#" style="color:#fff;" onclick="showForgotPassword()">Forgot password?</a>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="form-box hidden" id="register">
+      <div class="register-container">
+        <div class="top">
+          <span style="color:#fff;">Have an account?
+            <a href="#" onclick="login()">Login</a>
+          </span>
+          <header style="color:#fff;">Sign Up</header>
+        </div>
+        <div class="two-forms">
+          <div class="input-box">
+            <input
+              type="text"
+              class="input-field"
+              placeholder="Firstname"
+              id="firstName"
+              required
+            />
+            <i class="bx bx-user"></i>
+          </div>
+          <div class="input-box">
+            <input
+              type="text"
+              class="input-field"
+              placeholder="Lastname"
+              id="lastName"
+              required
+            />
+            <i class="bx bx-user"></i>
+          </div>
+        </div>
+        <div class="input-box">
+          <input
+            type="email"
+            class="input-field"
+            placeholder="Email"
+            id="registerEmail"
+            required
+          />
+          <i class="bx bx-envelope"></i>
+        </div>
+        <div class="input-box" style="margin-bottom:25px;">
+          <input
+            type="password"
+            class="input-field"
+            placeholder="Password"
+            id="registerPassword"
+            required
+          />
+          <i class="bx bx-lock-alt"></i>
+          <span class="toggle-pw" onclick="togglePassword('registerPassword')" style="
+            position:absolute;
+            right:15px;
+            top:10px;
+            color:#fff;
+            cursor:pointer;
+          "><i class='bx bx-show'></i></span>
+        </div>
+        <div class="input-box" style="margin-bottom:25px;">
+          <button type="submit" class="submit" id="signUpBtn">Register</button>
+        </div>
+        <div class="two-col" style="color:#fff;">
+          <div class="one">
+            <input type="checkbox" id="register-check" />
+            <label for="register-check" style="color:#fff;">Remember Me</label>
+          </div>
+          <div class="two">
+            <label><a href="#" style="color:#fff;">Terms & conditions</a></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD FORM (Hidden by default) -->
+    <div class="form-box hidden" id="forgotPasswordForm">
+      <div class="login-container">
+        <div class="top">
+          <header style="color:#fff; margin-bottom:10px;">Reset Password</header>
+        </div>
+        <p style="color:#fff;">Enter your email to reset your password:</p>
+        <div class="input-box" style="margin-bottom:25px;">
+          <input
+            type="email"
+            class="input-field"
+            placeholder="Your Email"
+            id="forgotEmail"
+            required
+          />
+          <i class="bx bx-envelope"></i>
+        </div>
+        <div class="input-box" style="margin-bottom:25px;">
+          <button type="submit" class="submit" onclick="forgotPasswordSubmit()">
+            Send Reset Email
+          </button>
+        </div>
+        <div style="color:#fff;">
+          <a href="#" style="color:#fff;" onclick="login()">Back to Login</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVENT DETAILS MODAL -->
+    <div id="eventModal" class="modal hidden">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeEventModal()">&times;</span>
+        <h2 id="detailEventName"></h2>
+        <p><strong>Organization:</strong> <span id="detailEventOrg"></span></p>
+        <p><strong>Location:</strong> <span id="detailEventLocation"></span></p>
+        <p><strong>Date:</strong> <span id="detailEventDate"></span></p>
+        <p><strong>Time:</strong> <span id="detailEventTime"></span></p>
+        <p><strong>Spots Left:</strong> <span id="detailEventSpots"></span></p>
+        <p><strong>Organizer Name:</strong> <span id="detailEventOrganizerName"></span></p>
+        <p><strong>Organizer Email:</strong> <span id="detailEventOrganizerEmail"></span></p>
+        <p><strong>Organizer Phone:</strong> <span id="detailEventOrganizerPhone"></span></p>
+        <p><strong>Flyer:</strong></p>
+        <img id="detailEventFlyer" src="" alt="Event Flyer" style="max-width: 100%; height: auto; border-radius: 5px; display: none;"/>
+        <hr/>
+        <p id="detailEventDescription">
+          Provide more in-depth info about tasks, contact details, etc.
+        </p>
+      </div>
+    </div>
+
+    <!-- PARTICIPANTS MODAL -->
+    <div id="participantsModal" class="modal hidden">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeParticipantsModal()">&times;</span>
+        <h2>Participants</h2>
+        <div id="participantsList">
+          <!-- Participants will be dynamically injected here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- JOIN EVENT CONFIRMATION MODAL -->
+    <div id="joinEventModal" class="modal hidden">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeJoinEventModal()">&times;</span>
+        <h2>Confirm Join Event</h2>
+        <p><strong>Event:</strong> <span id="confirmEventName"></span></p>
+        <p><strong>Organization:</strong> <span id="confirmEventOrg"></span></p>
+        <p><strong>Location:</strong> <span id="confirmEventLocation"></span></p>
+        <p><strong>Date:</strong> <span id="confirmEventDate"></span></p>
+        <p><strong>Time:</strong> <span id="confirmEventTime"></span></p>
+        <p><strong>Type:</strong> <span id="confirmEventType"></span></p>
+        <p><strong>Spots Left:</strong> <span id="confirmEventSpots"></span></p>
+        <p><strong>Organizer Name:</strong> <span id="confirmEventOrganizerName"></span></p>
+        <p><strong>Organizer Email:</strong> <span id="confirmEventOrganizerEmail"></span></p>
+        <p><strong>Organizer Phone:</strong> <span id="confirmEventOrganizerPhone"></span></p>
+        <hr/>
+        <button class="submit" onclick="confirmJoinEvent()">Confirm Join Event</button>
+      </div>
+    </div>
+
+    <!-- EDIT EVENT MODAL -->
+    <div id="editEventModal" class="modal hidden">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeEditEventModal()">&times;</span>
+        <h2>Edit Event</h2>
+        <form id="editEventForm">
+          <label>Event Name:</label>
+          <input type="text" id="editEventName" class="org-input" required/>
+
+          <label>Organization:</label>
+          <input type="text" id="editEventOrg" class="org-input" required/>
+
+          <label>Description:</label>
+          <textarea id="editEventDesc" class="org-input" rows="3" required></textarea>
+
+          <label>Location:</label>
+          <input type="text" id="editEventLocation" class="org-input" required/>
+
+          <label>Date:</label>
+          <input type="date" id="editEventDate" class="org-input" required/>
+
+          <label>Time:</label>
+          <input type="text" id="editEventTime" class="org-input" placeholder="e.g. 9AM - 12PM" required/>
+
+          <label>Type:</label>
+          <select id="editEventType" class="org-input" required>
+            <option value="Environment">Environment</option>
+            <option value="Education">Education</option>
+            <option value="Health">Health</option>
+            <option value="Community">Community</option>
+            <option value="Animal Welfare">Animal Welfare</option>
+            <option value="Arts">Arts</option>
+            <option value="Sports">Sports</option>
+          </select>
+
+          <label>Spots Left:</label>
+          <input type="number" id="editEventSpots" class="org-input" required/>
+
+          <!-- NEW: Additional Fields in Edit Modal -->
+          <label>Organizer Name:</label>
+          <input type="text" id="editEventOrganizerName" class="org-input" required/>
+
+          <label>Organizer Email:</label>
+          <input type="email" id="editEventOrganizerEmail" class="org-input" required/>
+
+          <label>Organizer Phone:</label>
+          <input type="tel" id="editEventOrganizerPhone" class="org-input" required/>
+
+          <label>Flyer (Optional):</label>
+          <input type="file" id="editEventFlyer" class="org-input" accept="image/*"/>
+
+          <button type="submit" class="submit" style="margin-top:15px;">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div> <!-- end of .wrapper -->
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-column">
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="#" onclick="showHome()">Home</a></li>
+          <li><a href="#" onclick="showVolunteer()">Volunteer</a></li>
+          <li><a href="#" onclick="showChat()">Chat</a></li>
+          <li><a href="#" onclick="showImpact()">Impact Calculator</a></li>
+          <li><a href="#" onclick="showOrganize()">Organize</a></li>
+          <li><a href="#" onclick="showMyPlans()">My Plans</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h3>Resources</h3>
+        <ul>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">News</a></li>
+          <li><a href="#">Events</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h3>Contact</h3>
+        <p>Email: info@volunteen.com</p>
+        <p>Phone: (555) 123-4567</p>
+      </div>
+      <div class="footer-column">
+        <h3 style="color:#fff;">Privacy Policy</h3>
+        <p><a href="#" style="color:#fff;">View Our Privacy Policy</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MAIN SCRIPT -->
+  <script src="app.js"></script>
+
+  <!-- Inline nav / page-control script -->
+  <script>
+    // The main navigation and page control scripts have been moved to app.js
+  </script>
+</body>
+</html>
