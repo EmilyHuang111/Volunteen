@@ -1,6 +1,6 @@
 /***** 1. Initialize Firebase *****/
 const firebaseConfig = {
-  apiKey: "AIzaSyDejHtCx3Lg4NfPjuT8fcrgG_3mif30jsI",
+  apiKey: "MYKEY",
   authDomain: "volunteeringapp-9a1ea.firebaseapp.com",
   projectId: "volunteeringapp-9a1ea",
   storageBucket: "volunteeringapp-9a1ea.firebasestorage.app",
