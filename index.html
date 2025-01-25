@@ -189,7 +189,8 @@
         <button class="search-btn" onclick="applyVolFilter()">Search</button>
       </div>
 
-      <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:10px;">
+      <!-- New Filters: Sort By and Proximity -->
+      <div class="filters-container" style="margin-top: 20px; display:flex; flex-wrap:wrap; gap:20px;">
         <div>
           <label><strong>Type:</strong></label><br/>
           <select id="volTypeFilter" onchange="applyVolFilter()" style="
@@ -205,26 +206,35 @@
             <option value="Sports">Sports</option>
           </select>
         </div>
-        <!-- Filter by location -->
         <div>
           <label><strong>Location:</strong></label><br/>
           <input type="text" id="volLocationFilter" style="
             background:#fff; color:#000; padding:5px; border-radius:5px;
           " onkeyup="applyVolFilter()"/>
         </div>
-        <!-- Filter by date -->
         <div>
           <label><strong>Date:</strong></label><br/>
           <input type="date" id="volDateFilter" style="
             background:#fff; color:#000; padding:5px; border-radius:5px;
           " onchange="applyVolFilter()"/>
         </div>
-        <!-- Filter by time -->
         <div>
           <label><strong>Time:</strong></label><br/>
           <input type="text" id="volTimeFilter" placeholder="e.g. 9AM" style="
             background:#fff; color:#000; padding:5px; border-radius:5px;
           " onkeyup="applyVolFilter()"/>
+        </div>
+        <!-- NEW: Sort By Filter -->
+        <div>
+          <label><strong>Sort by:</strong></label><br/>
+          <select id="volSortFilter" onchange="applyVolFilter()" style="
+            background:#fff; color:#000; padding:5px; border-radius:5px;
+          ">
+            <option value="default">Default</option>
+            <option value="newest">Newest</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="proximity">Near Me</option> <!-- New Option -->
+          </select>
         </div>
       </div>
 
@@ -281,6 +291,13 @@
 
       <label>Your Phone:</label>
       <input type="tel" id="orgEventOrganizerPhone" class="org-input" placeholder="Organizer's Phone Number"/>
+
+      <!-- NEW: Latitude and Longitude Fields -->
+      <label>Latitude:</label>
+      <input type="number" step="any" id="orgEventLatitude" class="org-input" placeholder="e.g. 37.7749"/>
+
+      <label>Longitude:</label>
+      <input type="number" step="any" id="orgEventLongitude" class="org-input" placeholder="e.g. -122.4194"/>
 
       <label>Flyer (Optional):</label>
       <input type="file" id="orgEventFlyer" class="org-input" accept="image/*"/>
@@ -568,6 +585,13 @@
           <label>Organizer Phone:</label>
           <input type="tel" id="editEventOrganizerPhone" class="org-input" required/>
 
+          <!-- NEW: Latitude and Longitude Fields -->
+          <label>Latitude:</label>
+          <input type="number" step="any" id="editEventLatitude" class="org-input" placeholder="e.g. 37.7749"/>
+
+          <label>Longitude:</label>
+          <input type="number" step="any" id="editEventLongitude" class="org-input" placeholder="e.g. -122.4194"/>
+
           <label>Flyer (Optional):</label>
           <input type="file" id="editEventFlyer" class="org-input" accept="image/*"/>
 
@@ -608,6 +632,10 @@
         <h3 style="color:#fff;">Privacy Policy</h3>
         <p><a href="#" style="color:#fff;">View Our Privacy Policy</a></p>
       </div>
+    </div>
+    <!-- NEW COPYRIGHT NOTICE -->
+    <div class="footer-bottom" style="text-align:center; margin-top:20px; color:#fff;">
+      &copy; 2025 Volunteen. All Rights Reserved.
     </div>
   </footer>
 
